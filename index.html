@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>App Store Screenshot Generator — Device Frames & Captions</title>
+<meta name="description" content="Create pixel-perfect App Store screenshots with device frames, gradient backgrounds, and headline text. Free, runs in your browser." />
+<link rel="canonical" href="https://appstore-screenshot-generator.vercel.app/" />
+<meta property="og:title" content="App Store Screenshot Generator" />
+<meta property="og:description" content="Generate App Store-ready screenshots with device frames and captions in seconds. Free, browser-based." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<style>
+  :root{
+    --bg:#0b0c10;--panel:#15171f;--panel2:#1c1f2a;--ink:#eef1f7;--muted:#9aa3b5;
+    --line:#262a36;--accent:#5b8cff;--ok:#34d399;--warn:#fbbf24;--radius:14px;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);background:radial-gradient(1100px 600px at 30% -10%,#1a1040 0,transparent 55%),var(--bg)}
+  header{padding:42px 22px 10px;max-width:980px;margin:0 auto}
+  .badge{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);
+    border:1px solid var(--line);padding:5px 11px;border-radius:999px;background:var(--panel)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+  h1{font-size:30px;margin:16px 0 6px;letter-spacing:-.4px}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--muted);max-width:600px}
+  main{max-width:980px;margin:18px auto 60px;padding:0 22px;display:grid;grid-template-columns:340px 1fr;gap:18px;align-items:start}
+  @media(max-width:800px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:14px}
+  .card:last-child{margin-bottom:0}
+  h2{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 13px}
+  label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px;font-weight:600;letter-spacing:.2px;text-transform:uppercase}
+  label:first-of-type{margin-top:0}
+  input[type=text],select,textarea,input[type=range]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    border-radius:9px;padding:9px 11px;font:inherit;outline:none}
+  input[type=range]{padding:0;accent-color:var(--accent)}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  .color-row{display:flex;gap:8px;align-items:center}
+  .color-row input[type=color]{width:44px;height:36px;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel2);cursor:pointer;padding:2px;flex:none}
+  .preset-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+  .preset{width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:border .15s}
+  .preset:hover,.preset.active{border-color:var(--accent)}
+  .upload-box{border:2px dashed var(--line);border-radius:10px;padding:28px;text-align:center;cursor:pointer;
+    background:var(--panel2);transition:border .2s}
+  .upload-box:hover,.upload-box.dragover{border-color:var(--accent)}
+  .upload-box input{display:none}
+  .upload-hint{color:var(--muted);font-size:13px;margin-top:6px}
+  .chip-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .chip{cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
+    background:var(--panel2);text-align:left;font:12px/1.3 inherit;color:var(--ink);transition:border .15s,background .15s}
+  .chip:hover,.chip.active{border-color:var(--accent);background:rgba(91,140,255,.1)}
+  .chip-label{font-weight:700;font-size:12px}
+  .chip-dim{color:var(--muted);font-size:11px}
+  button.primary{cursor:pointer;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:650;
+    background:linear-gradient(180deg,#6b97ff,#4a78ff);color:#fff;width:100%;font-size:15px;margin-top:6px}
+  button.primary:active{transform:translateY(1px)}
+  button.secondary{cursor:pointer;border:1px solid var(--line);border-radius:9px;padding:10px 16px;
+    font:13px/1 inherit;font-weight:600;background:var(--panel2);color:var(--ink);width:100%;margin-top:8px}
+  button.secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .preview-panel{position:sticky;top:20px}
+  canvas{display:block;width:100%;border-radius:12px;background:#0b0c10;border:1px solid var(--line)}
+  .tip-box{background:linear-gradient(135deg,#1a2035 0%,#141825 100%);border:1px solid #2a304a;
+    border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px}
+  footer{max-width:980px;margin:0 auto;padding:0 22px 50px;color:#6b7385;font-size:12.5px}
+  footer a{color:var(--muted)}
+  .slider-row{display:flex;align-items:center;gap:10px}
+  .slider-val{min-width:32px;font-size:13px;color:var(--muted);text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <span class="badge"><span class="dot"></span>Free · no upload · runs in your browser</span>
+  <h1>App Store <span>Screenshot Generator</span></h1>
+  <p class="sub">Add a device frame, gradient background, and headline to your screenshot — export at the exact pixel size App Store Connect requires.</p>
+</header>
+<main>
+
+  <!-- LEFT: Controls -->
+  <div>
+    <div class="card">
+      <h2>1. Screenshot</h2>
+      <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()"
+        ondragover="ev.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event)">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted);margin:0 auto;display:block">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <div class="upload-hint">Click or drag your screenshot here</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">PNG or JPG</div>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this.files[0])">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Device</h2>
+      <div class="chip-grid" id="deviceGrid">
+        <button class="chip active" data-device="iphone67" onclick="setDevice('iphone67',this)">
+          <div class="chip-label">iPhone 6.7"</div>
+          <div class="chip-dim">1320 × 2868 px</div>
+        </button>
+        <button class="chip" data-device="iphone65" onclick="setDevice('iphone65',this)">
+          <div class="chip-label">iPhone 6.5"</div>
+          <div class="chip-dim">1284 × 2778 px</div>
+        </button>
+        <button class="chip" data-device="iphone61" onclick="setDevice('iphone61',this)">
+          <div class="chip-label">iPhone 6.1"</div>
+          <div class="chip-dim">1179 × 2556 px</div>
+        </button>
+        <button class="chip" data-device="ipad129" onclick="setDevice('ipad129',this)">
+          <div class="chip-label">iPad 12.9"</div>
+          <div class="chip-dim">2048 × 2732 px</div>
+        </button>
+      </div>
+      <label>Text position</label>
+      <select id="textPos" onchange="render()">
+        <option value="top">Caption above screenshot</option>
+        <option value="bottom">Caption below screenshot</option>
+        <option value="none">No caption (screenshot only)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>3. Caption</h2>
+      <label>Headline</label>
+      <input id="headline" type="text" placeholder="e.g. Track habits effortlessly" oninput="render()" maxlength="60" />
+      <label>Subheadline</label>
+      <input id="subheadline" type="text" placeholder="e.g. Daily streaks that actually stick" oninput="render()" maxlength="80" />
+      <label style="margin-top:12px">Headline size</label>
+      <div class="slider-row">
+        <input type="range" id="headlineSize" min="60" max="140" value="90" oninput="render();document.getElementById('headlineSizeVal').textContent=this.value" />
+        <span class="slider-val" id="headlineSizeVal">90</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4. Background</h2>
+      <label>Gradient preset</label>
+      <div class="preset-row" id="presetRow"></div>
+      <label style="margin-top:12px">Top colour</label>
+      <div class="color-row">
+        <input type="color" id="colorTop" value="#1a1040" onchange="clearPreset();render()" />
+        <span style="font-size:13px;color:var(--muted)">Bottom colour</span>
+        <input type="color" id="colorBot" value="#0b0c10" onchange="clearPreset();render()" />
+      </div>
+      <label>Gradient angle</label>
+      <div class="slider-row">
+        <input type="range" id="gradAngle" min="0" max="360" value="160" oninput="render();document.getElementById('gradAngleVal').textContent=this.value+'°'" />
+        <span class="slider-val" id="gradAngleVal">160°</span>
+      </div>
+    </div>
+
+    <button class="primary" onclick="exportImage()">Download PNG →</button>
+    <button class="secondary" onclick="copyDataURL()">Copy image to clipboard</button>
+  </div>
+
+  <!-- RIGHT: Preview -->
+  <div class="preview-panel">
+    <canvas id="preview" width="400" height="600"></canvas>
+    <div class="tip-box">
+      <div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:4px">✦ Support Orb Intelligence</div>
+        <div style="color:#9aa3b5;font-size:13px">One-person indie studio. Keeping these tools free takes time.</div>
+      </div>
+      <a href="https://buy.stripe.com/4gM28t2xG3SngLvbiY6wE01" target="_blank" rel="noopener"
+        style="display:inline-block;background:linear-gradient(180deg,#6b97ff,#4a78ff);color:#fff;font-weight:650;font-size:14px;padding:10px 22px;border-radius:9px;text-decoration:none;white-space:nowrap;flex:none">
+        Tip · $9.90
+      </a>
+    </div>
+  </div>
+
+</main>
+<footer>
+  Built by <b>Orb Intelligence</b>. Companion tools:
+  <a href="https://appstore-metadata-auditor.vercel.app/">Metadata Auditor</a> ·
+  <a href="https://ios-privacy-policy-generator.vercel.app/">Privacy Policy Generator</a> ·
+  <a href="https://ios-app-review-generator.vercel.app/">Review Responder</a>
+</footer>
+<script src="generator.js"></script>
+<script>
+const PRESETS = [
+  ["#1a1040","#0b0c10"],["#0f2027","#203a43"],["#1a0533","#00040a"],
+  ["#0f0c29","#302b63"],["#005c97","#363795"],["#1d3557","#457b9d"],
+  ["#16213e","#0f3460"],["#240b36","#c31432"],["#0b3d0b","#1e8449"],
+  ["#1c1c2e","#2c2c54"],["#2d1b69","#11998e"],["#3a1c71","#d76d77"],
+];
+const DEVICES = {
+  iphone67: {w:1320,h:2868,label:"iPhone 6.7\""},
+  iphone65: {w:1284,h:2778,label:"iPhone 6.5\""},
+  iphone61: {w:1179,h:2556,label:"iPhone 6.1\""},
+  ipad129:  {w:2048,h:2732,label:"iPad 12.9\""},
+};
+
+let currentDevice="iphone67", uploadedImg=null;
+
+// Build presets
+PRESETS.forEach(([t,b],i)=>{
+  const d=document.createElement("div");
+  d.className="preset"; d.id=`preset_${i}`;
+  d.style.background=`linear-gradient(160deg,${t},${b})`;
+  d.title=`${t} → ${b}`;
+  d.onclick=()=>{
+    document.getElementById("colorTop").value=t;
+    document.getElementById("colorBot").value=b;
+    document.querySelectorAll(".preset").forEach(p=>p.classList.remove("active"));
+    d.classList.add("active");
+    render();
+  };
+  document.getElementById("presetRow").appendChild(d);
+});
+PRESETS[0] && document.getElementById("preset_0").classList.add("active");
+
+function setDevice(key,btn){
+  currentDevice=key;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.remove("active"));
+  btn.classList.add("active");
+  render();
+}
+function clearPreset(){
+  document.querySelectorAll(".preset").forEach(p=>p.classList.remove("active"));
+}
+function handleDrop(ev){
+  ev.preventDefault();
+  document.getElementById("uploadBox").classList.remove("dragover");
+  const f=ev.dataTransfer.files[0];
+  if(f) handleFile(f);
+}
+function handleFile(file){
+  if(!file||!file.type.startsWith("image/")) return;
+  const r=new FileReader();
+  r.onload=e=>{ uploadedImg=new Image(); uploadedImg.onload=render; uploadedImg.src=e.target.result; };
+  r.readAsDataURL(file);
+  document.getElementById("uploadBox").querySelector(".upload-hint").textContent=file.name;
+}
+
+render();
+</script>
+</body>
+</html>
